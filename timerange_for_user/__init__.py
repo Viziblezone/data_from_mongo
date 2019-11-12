@@ -19,7 +19,7 @@ def get_id_list_from_user(user_id, start_date, end_date, device_type=0, params={
                                                                                 "gap_time": 5 * 60}):
     # Query mongo DB for "walking" sessions
     # returns a list of IDs
-    # Version 2.11, 12-11-19
+    # Version 2.12, 12-11-19
     #
     # changed: compatible to iPhone
     #
