@@ -19,9 +19,9 @@ def get_id_list_from_user(user_id, start_date, end_date, device_type=0, params={
                                                                                 "gap_time": 5 * 60}):
     # Query mongo DB for "walking" sessions
     # returns a list of IDs
-    # Version 2.01, 02-10-19
+    # Version 2.1, 12-11-19
     #
-    # changed: new data scheme
+    # changed: compatible to iPhone
     #
     # params:
     # max_speed: 0.5 m/s, the lower threshold of max speed (less than that is no movement)
@@ -55,6 +55,7 @@ def get_id_list_from_user(user_id, start_date, end_date, device_type=0, params={
                       "timestamp_local": "$timestamp_local",
                       "timestamp": "$timestamp",
                       "linear_acceleration": "$linear_acceleration",
+                      "acceleration": "$acceleration",
                       "steps": "$steps",
                       "steps0": {"$arrayElemAt": ["$steps", 0]},
                       "steps1": {"$arrayElemAt": ["$steps", -1]}
@@ -68,6 +69,7 @@ def get_id_list_from_user(user_id, start_date, end_date, device_type=0, params={
                       "timestamp_local": "$timestamp_local",
                       "timestamp": "$timestamp",
                       "linear_acceleration": "$linear_acceleration",
+                      "acceleration": "$acceleration",
                       "steps": "$steps",
                       "delta_steps": {"$subtract": ["$steps1.value", "$steps0.value"]}
                       }},
@@ -99,9 +101,14 @@ def get_id_list_from_user(user_id, start_date, end_date, device_type=0, params={
 
     # acceleration filter
     def calc_std_acceleration(row):
-        la = pd.DataFrame(row.linear_acceleration)
-        if len(la) > 0:
-            la["tot"] = (la.x_axis ** 2 + la.y_axis ** 2 + la.z_axis ** 2) ** 0.5
+        la=pd.DataFrame(row.linear_acceleration)
+        acc=pd.DataFrame(row.acceleration)
+        if len(la)>0:
+            la["tot"]=(la.x_axis**2+la.y_axis**2+la.z_axis**2)**0.5
+            return la["tot"].std()
+        elif len(acc)>0:
+            la=acc
+            la["tot"]=(la.x_axis**2+la.y_axis**2+la.z_axis**2)**0.5
             return la["tot"].std()
         return np.nan
 
