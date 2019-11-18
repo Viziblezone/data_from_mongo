@@ -16,10 +16,11 @@ def get_id_list_from_user(user_id, start_date, end_date, device_type=0, params={
                                                                                 "steps_delta": -1,
                                                                                 "acc_std": 1.0,
                                                                                 "max_dist_km2min": 0.16,
+                                                                                "min_dist_km2min": 0.015,
                                                                                 "gap_time": 5 * 60}):
     # Query mongo DB for "walking" sessions
     # returns a list of IDs
-    # Version 2.2, 13-11-19
+    # Version 2.21, 18-11-19
     #
     # changed: quicker query, using external params
     #
