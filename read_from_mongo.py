@@ -32,10 +32,92 @@ import shapely
 import random
 
 from shapely.geometry import LineString, Point
-import connect_to_db as mongoConnection
 
 
-# {['latitude':1]},'gps_longitude':1 ,'gps_speed':1
+from sshtunnel import SSHTunnelForwarder
+import os.path
+
+
+class hostnameManager:
+    @staticmethod
+    def getHostName(hostType):
+        hostname='localhost'
+        if hostType in 'prod':
+            hostname='automotive.vizible.zone'
+        elif hostType in 'test':
+            hostname='dev.vizible.zone'
+        return hostname
+
+    @staticmethod
+    def getPemFileName(hostType):
+        pemFileName=''
+        if hostType in 'prod':
+            pemFileName='viziblezone-prod.pem'
+        elif hostType in 'test':
+            pemFileName='automotive-dev.pem'
+        return pemFileName
+
+
+class mongoConnection:
+
+    def __init__(self):
+        self.client=None
+        self.server=None
+        self.db=None
+
+    def connectToDB(self,connectionType):
+
+        MONGO_HOST = hostnameManager.getHostName(connectionType)
+        MONGO_DB = "VizibleZone"
+        MONGO_USER = "ubuntu"
+        if (connectionType == 'prod'):
+            REMOTE_ADDRESS = ('docdb-2019-06-13-11-43-18.cluster-cybs9fpwjg54.eu-west-1.docdb.amazonaws.com', 27017)
+        else:
+            REMOTE_ADDRESS = ('127.0.0.1', 27017)
+
+        pem_ca_file = 'rds-combined-ca-bundle.pem'
+        pem_server_file = hostnameManager.getPemFileName(connectionType)
+
+        pem_path = '../pems/'
+        if not os.path.exists(pem_path + pem_server_file):
+            pem_path = pem_path[1:]
+
+        self.server = SSHTunnelForwarder(
+            MONGO_HOST,
+            ssh_pkey=pem_path + pem_server_file,
+            ssh_username=MONGO_USER,
+            remote_bind_address=REMOTE_ADDRESS
+        )
+        self.server = SSHTunnelForwarder(
+            MONGO_HOST,
+            ssh_pkey=pem_path + pem_server_file,
+            ssh_username=MONGO_USER,
+            remote_bind_address=REMOTE_ADDRESS
+        )
+        self.server.start()
+
+        if (connectionType == 'prod'):
+            self.client = MongoClient('127.0.0.1',
+                                 self.server.local_bind_port,
+                                 username='viziblezone',
+                                 password='vz123456',
+                                 ssl=True,
+                                 ssl_match_hostname=False,
+                                 ssl_ca_certs=(pem_path + pem_ca_file),
+                                 authMechanism='SCRAM-SHA-1')  # server.local_bind_port is assigned local port
+        else:
+            self.client = MongoClient('127.0.0.1', self.server.local_bind_port)  # server.local_bind_port is assigned local port
+
+        self.db = self.client[MONGO_DB]
+        print('db',  self.db)
+        print('\nYou are connected to ' + connectionType + ' server\n')
+        return True
+
+    def dispose(self):
+        print("Closing connection to DB")
+
+        self.client.close()
+        self.server.stop()
 
 
 
@@ -52,8 +134,8 @@ import math
 
 # {['latitude':1]},'gps_longitude':1 ,'gps_speed':1
 
-def read_VZ_from_mongo(_id):
-    dfjson = pd.DataFrame(mongoConnection.db.sensors.find({"_id": ObjectId(_id)}, {"_id": 1, 'gps': 1, 'user_id': 1, 'device_type': 1, "timestamp_local": 1}))
+def read_VZ_from_mongo(mc,_id):
+    dfjson = pd.DataFrame(mc.db.sensors.find({"_id": ObjectId(_id)}, {"_id": 1, 'gps': 1, 'user_id': 1, 'device_type': 1, "timestamp_local": 1}))
     if len(dfjson) == 0:
         print("_id {} is empty".format(_id))
         return dfjson
@@ -128,22 +210,10 @@ def read_VZ_from_mongo(_id):
 
 
 
-# In[67]:
 
 
-# server.stop()
 
-
-# In[68]:
-
-
-# pd.DataFrame(db.sensors.find({ 'user_id': "rZBbw12NtJYWsDqgomNJSg9z7ii1" }))
-
-
-# In[78]:
-
-
-def get_df_for_ids(ids):
+def get_df_for_ids(mc,ids):
 
     print(len(ids), ' ids')
     print(ids)
@@ -151,7 +221,7 @@ def get_df_for_ids(ids):
     df_vz = pd.DataFrame()
     for _id in ids:
         try:
-            df_tmp = read_VZ_from_mongo(_id)
+            df_tmp = read_VZ_from_mongo(mc,_id)
             df_vz = pd.concat([df_vz, df_tmp], axis=0)
         except:
             print('problem with id {}'.format(_id))

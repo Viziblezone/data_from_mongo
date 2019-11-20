@@ -1,9 +1,8 @@
 import time
 from datetime import datetime, timezone, timedelta
-import connect_to_db as mongoConnection
 import pandas as pd
+
 import numpy as np
-import read_from_mongo
 
 
 def convert_str_to_datetime(row):
@@ -11,7 +10,7 @@ def convert_str_to_datetime(row):
     return datetime.strptime(t[:-3] + t[-2:], '%Y-%m-%dT%H:%M:%S.%f%z')
 
 
-def get_id_list_from_user(user_id, start_date, end_date, device_type=0, params={"max_speed": 0.5, "min_speed": 8,
+def get_id_list_from_user(mc,user_id, start_date, end_date, device_type=0, params={"max_speed": 0.5, "min_speed": 8,
                                                                                 "min_accuracy": 15,
                                                                                 "steps_delta": -1,
                                                                                 "acc_std": 1.0,
@@ -80,7 +79,7 @@ def get_id_list_from_user(user_id, start_date, end_date, device_type=0, params={
             "deltaSteps": {"$gt": params["steps_delta"]}
         }}
 
-    agg = mongoConnection.db.sensors.aggregate(agg_code)
+    agg = mc.db.sensors.aggregate(agg_code)
     df = pd.DataFrame(agg)
     print(len(df))
     if len(df) == 0:
