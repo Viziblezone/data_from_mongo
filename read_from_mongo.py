@@ -113,6 +113,10 @@ class mongoConnection:
         print('\nYou are connected to ' + connectionType + ' server\n')
         return True
 
+    def log_session_to_DB(self, session):
+        self.db.walking_session.insert_one(session)
+
+
     def dispose(self):
         print("Closing connection to DB")
 
