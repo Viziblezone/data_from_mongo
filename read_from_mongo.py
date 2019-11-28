@@ -118,8 +118,7 @@ class mongoConnection:
         self.db.walking_session.insert_one(session)
 
     def get_sessions_by_date(self, start_date, end_date):
-        start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S%z")
-        end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S%z")
+
         agg_code = [
             {"$match": {"start_time": {"$gt": start_date, "$lt": end_date}}}
         ]
