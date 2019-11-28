@@ -5,9 +5,7 @@ import pandas as pd
 import numpy as np
 
 
-def convert_str_to_datetime(row):
-    t = row['timestamp_local']
-    return datetime.strptime(t[:-3] + t[-2:], '%Y-%m-%dT%H:%M:%S.%f%z')
+
 
 
 def get_id_list_from_user(mc,user_id, start_date, end_date, device_type=0, params={"max_speed": 0.5, "min_speed": 8,
@@ -33,11 +31,8 @@ def get_id_list_from_user(mc,user_id, start_date, end_date, device_type=0, param
     # gap_time: 10*60 sec, gap between sessions to be considered a new session
 
     try:  # check date string format
-        start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S%z")
-        end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S%z")
-        t0 = datetime(1970, 1, 1, tzinfo=timezone(timedelta(seconds=0)))
-        start_date_long = (start_date - t0).total_seconds() * 1000
-        end_date_long = (end_date - t0).total_seconds() * 1000
+        start_date_long = mc.convert_to_unix_time(start_date)
+        end_date_long = mc.convert_to_unix_time(end_date)
     except:
         raise ValueError("Time string should be of format: 2019-07-28 00:00:00+0300")
 

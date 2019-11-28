@@ -32,6 +32,7 @@ import shapely
 import random
 
 from shapely.geometry import LineString, Point
+from datetime import datetime, timezone, timedelta
 
 
 from sshtunnel import SSHTunnelForwarder
@@ -116,6 +117,16 @@ class mongoConnection:
     def log_session_to_DB(self, session):
         self.db.walking_session.insert_one(session)
 
+    def get_sessions_by_date(self, start_date, end_date):
+        start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S%z")
+        end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S%z")
+        agg_code = [
+            {"$match": {"start_time": {"$gt": start_date, "$lt": end_date}}}
+        ]
+
+        agg = self.db.walking_session.aggregate(agg_code)
+        return pd.DataFrame(agg)
+
 
     def dispose(self):
         print("Closing connection to DB")
@@ -123,14 +134,16 @@ class mongoConnection:
         self.client.close()
         self.server.stop()
 
+    @staticmethod
+    def convert_to_unix_time(date):
+        t0 = datetime(1970, 1, 1, tzinfo=timezone(timedelta(seconds=0)))
+        try:  # check date string format
+            date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S%z")
+            return (date - t0).total_seconds() * 1000
+        except:
+            raise ValueError("Time string should be of format: 2019-07-28 00:00:00+0300")
 
 
-def convert_str_to_datetime(row):
-    t = row['timestamp_local']
-    return datetime.strptime(t[:-3] + t[-2:], '%Y-%m-%dT%H:%M:%S.%f%z')
-
-
-# In[77]:
 
 
 import math
