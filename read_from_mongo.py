@@ -20,7 +20,6 @@ import pathlib
 from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
-from pyqtree import Index
 from shapely import geometry
 import random
 import shapely.geometry as ge
