@@ -38,45 +38,45 @@ from sshtunnel import SSHTunnelForwarder
 import os.path
 
 
-class hostnameManager:
+class HostnameManager:
     @staticmethod
-    def getHostName(hostType):
+    def get_host_name(host_type):
         hostname='localhost'
-        if hostType in 'prod':
+        if host_type in 'prod':
             hostname='automotive.vizible.zone'
-        elif hostType in 'test':
+        elif host_type in 'test':
             hostname='dev.vizible.zone'
         return hostname
 
     @staticmethod
-    def getPemFileName(hostType):
-        pemFileName=''
-        if hostType in 'prod':
-            pemFileName='viziblezone-prod.pem'
-        elif hostType in 'test':
-            pemFileName='automotive-dev.pem'
-        return pemFileName
+    def get_pem_file_name(host_type):
+        pem_file_name= ''
+        if host_type in 'prod':
+            pem_file_name= 'viziblezone-prod.pem'
+        elif host_type in 'test':
+            pem_file_name= 'automotive-dev.pem'
+        return pem_file_name
 
 
-class mongoConnection:
+class MongoConnection:
 
     def __init__(self):
         self.client=None
         self.server=None
         self.db=None
 
-    def connectToDB(self,connectionType):
+    def connect(self, connection_type):
 
-        MONGO_HOST = hostnameManager.getHostName(connectionType)
+        MONGO_HOST = HostnameManager.get_host_name(connection_type)
         MONGO_DB = "VizibleZone"
         MONGO_USER = "ubuntu"
-        if (connectionType == 'prod'):
+        if (connection_type == 'prod'):
             REMOTE_ADDRESS = ('docdb-2019-06-13-11-43-18.cluster-cybs9fpwjg54.eu-west-1.docdb.amazonaws.com', 27017)
         else:
             REMOTE_ADDRESS = ('127.0.0.1', 27017)
 
         pem_ca_file = 'rds-combined-ca-bundle.pem'
-        pem_server_file = hostnameManager.getPemFileName(connectionType)
+        pem_server_file = HostnameManager.get_pem_file_name(connection_type)
 
         pem_path = '../pems/'
         if not os.path.exists(pem_path + pem_server_file):
@@ -96,7 +96,7 @@ class mongoConnection:
         )
         self.server.start()
 
-        if (connectionType == 'prod'):
+        if (connection_type == 'prod'):
             self.client = MongoClient('127.0.0.1',
                                  self.server.local_bind_port,
                                  username='viziblezone',
@@ -110,10 +110,10 @@ class mongoConnection:
 
         self.db = self.client[MONGO_DB]
         print('db',  self.db)
-        print('\nYou are connected to ' + connectionType + ' server\n')
+        print('\nYou are connected to ' + connection_type + ' server\n')
         return True
 
-    def log_session_to_DB(self, session):
+    def log_session(self, session):
         self.db.walking_session.insert_one(session)
 
     def get_sessions_by_date(self, start_date, end_date):
