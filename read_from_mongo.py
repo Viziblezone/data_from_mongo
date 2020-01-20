@@ -73,9 +73,9 @@ class MongoConnection:
         if (connection_type == 'prod'):
             REMOTE_ADDRESS = ('docdb-2019-06-13-11-43-18.cluster-cybs9fpwjg54.eu-west-1.docdb.amazonaws.com', 27017)
         else:
-            REMOTE_ADDRESS = ('127.0.0.1', 27017)
+            REMOTE_ADDRESS = ('vz-dev-docdb-2019-11-10-13-24-25.cluster-cybs9fpwjg54.eu-west-1.docdb.amazonaws.com',27017)
 
-        pem_ca_file = 'rds-combined-ca-bundle.pem'
+        pem_ca_file = 'rds-combined-ca-bundle (1).pem'
         pem_server_file = HostnameManager.get_pem_file_name(connection_type)
 
         pem_path = '../pems/'
@@ -88,12 +88,7 @@ class MongoConnection:
             ssh_username=MONGO_USER,
             remote_bind_address=REMOTE_ADDRESS
         )
-        self.server = SSHTunnelForwarder(
-            MONGO_HOST,
-            ssh_pkey=pem_path + pem_server_file,
-            ssh_username=MONGO_USER,
-            remote_bind_address=REMOTE_ADDRESS
-        )
+
         self.server.start()
 
         if (connection_type == 'prod'):
@@ -106,11 +101,19 @@ class MongoConnection:
                                  ssl_ca_certs=(pem_path + pem_ca_file),
                                  authMechanism='SCRAM-SHA-1')  # server.local_bind_port is assigned local port
         else:
-            self.client = MongoClient('127.0.0.1', self.server.local_bind_port)  # server.local_bind_port is assigned local port
+            self.client = MongoClient('127.0.0.1',
+                                  self.server.local_bind_port,
+                                  username='dev',
+                                  password='protectingpedestrians',
+                                  ssl=True,
+                                  ssl_match_hostname=False,
+                                  ssl_ca_certs=(pem_path + pem_ca_file),
+                                  authMechanism='SCRAM-SHA-1')  # server.local_bind_port is assigned local port
 
         self.db = self.client[MONGO_DB]
         print('db',  self.db)
         print('\nYou are connected to ' + connection_type + ' server\n')
+        print(self.db.collection_names())
         return True
 
     def log_session(self, session):
