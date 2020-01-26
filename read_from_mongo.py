@@ -146,20 +146,19 @@ class MongoConnection:
 
 
 
-
 import math
 
 
 # {['latitude':1]},'gps_longitude':1 ,'gps_speed':1
 
 def read_VZ_from_mongo(mc,_id):
-    dfjson = pd.DataFrame(mc.db.sensors.find({"_id": ObjectId(_id)}, {"_id": 1, 'gps': 1, 'user_id': 1, 'device_type': 1, "timestamp_local": 1}))
+    dfjson = pd.DataFrame(mc.db.sensors.find({"_id": ObjectId(_id)}, {"_id": 1, 'gps': 1, 'user_id': 1, 'device_type': 1, "timestamp_local": 1, "createdAt": 1}))
     if len(dfjson) == 0:
         print("_id {} is empty".format(_id))
         return dfjson
     # find number_of_samples
     vecs = ['gps']
-    singles = ['_id', 'user_id', 'device_type', "timestamp_local"]
+    singles = ['_id', 'user_id', 'device_type', "timestamp_local", "createdAt"]
     vecs_dfs = []
     min_ts = np.inf
     max_ts = 0
