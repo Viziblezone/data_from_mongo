@@ -34,7 +34,7 @@ def get_id_list_from_user(mc,user_id, start_date, end_date, device_type=0, param
         start_date_long = mc.convert_to_unix_time(start_date)
         end_date_long = mc.convert_to_unix_time(end_date)
     except:
-        raise ValueError("Time string should be of format: 2019-07-28 00:00:00+0300")
+        raise ValueError("Time string should be of format: 2019-07-28 00:00:00.000+0300")
 
     agg_code = [
         {"$match": {"user_id": user_id,
@@ -136,10 +136,10 @@ def get_id_list_from_user_by_createdAt(mc,user_id, start_date, end_date, device_
     # gap_time: 10*60 sec, gap between sessions to be considered a new session
 
     try:  # check date string format
-        start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S%z")
-        end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S%z")
+        start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S.%f%z")
+        end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S.%f%z")
     except:
-        raise ValueError("Time string should be of format: 2019-07-28 00:00:00+0300")
+        raise ValueError("Time string should be of format: 2019-07-28 00:00:00.000+0300")
 
     agg_code = [
         {"$match": {"user_id": user_id,
@@ -170,7 +170,7 @@ def get_id_list_from_user_by_createdAt(mc,user_id, start_date, end_date, device_
         agg_code[0] = {"$match": {
             "user_id": user_id,
             "device_type": device_type,
-            "timestamp": {"$gt": start_date_long, "$lt": end_date_long},
+            "createdAt": {"$gt": start_date, "$lt": end_date},
             "gpsMaxSpeed": {"$lt": params["min_speed"]},
             "gpsMinSpeed": {"$gt": params["max_speed"]},
             "distance": {"$gt": params["min_dist_km2min"], "$lt": params["max_dist_km2min"]},
