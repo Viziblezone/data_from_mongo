@@ -139,10 +139,10 @@ class MongoConnection:
     def convert_to_unix_time(date):
         t0 = datetime(1970, 1, 1, tzinfo=timezone(timedelta(seconds=0)))
         try:  # check date string format
-            date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S%z")
+            date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f%z")
             return (date - t0).total_seconds() * 1000
         except:
-            raise ValueError("Time string should be of format: 2019-07-28 00:00:00+0300")
+            raise ValueError("Time string should be of format: 2019-07-28 00:00:00.000+0300")
 
 
 
