@@ -75,7 +75,7 @@ class MongoConnection:
         else:
             REMOTE_ADDRESS = ('vz-dev-docdb-2019-11-10-13-24-25.cluster-cybs9fpwjg54.eu-west-1.docdb.amazonaws.com',27017)
 
-        pem_ca_file = 'rds-combined-ca-bundle (1).pem'
+        pem_ca_file = 'rds-combined-ca-bundle.pem'
         pem_server_file = HostnameManager.get_pem_file_name(connection_type)
 
         pem_path = '../pems/'
