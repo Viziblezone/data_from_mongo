@@ -64,8 +64,9 @@ class MongoConnection:
         self.client=None
         self.server=None
         self.db=None
+        self.db_write=None
 
-    def connect(self, connection_type):
+    def connect(self, connection_type, read_only=False):
 
         MONGO_HOST = HostnameManager.get_host_name(connection_type)
         MONGO_DB = "VizibleZone"
@@ -111,13 +112,15 @@ class MongoConnection:
                                   authMechanism='SCRAM-SHA-1')  # server.local_bind_port is assigned local port
 
         self.db = self.client[MONGO_DB]
+        if (not read_only):
+            self.db_write = self.db
         print('db',  self.db)
         print('\nYou are connected to ' + connection_type + ' server\n')
         print(self.db.collection_names())
         return True
 
     def log_session(self, session):
-        self.db.walking_session.insert_one(session)
+        self.db_write.walking_session.insert_one(session)
 
     def get_sessions_by_date(self, start_date, end_date):
 
