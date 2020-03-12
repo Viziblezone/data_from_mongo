@@ -235,15 +235,12 @@ def get_id_list_from_user_by_createdAt(mc,user_id, start_date, end_date, device_
     session_idx = np.concatenate([[0], np.where(tot_dt > params["gap_time"])[0], [len(t)]], axis=0)
 
     list_ids = list(df._id)
-    list_timestamps=list(df.timestamp)
-    ids_start_time=list_timestamps[0]
     list_of_lists = []
     to_include=False
     for i in range(len(session_idx) - 1):
         list_i = list_ids[session_idx[i]:session_idx[i + 1]]
         if (not to_include) and (_id_min in list_i):
             to_include=True
-            ids_start_time=pd.to_datetime(list_timestamps[session_idx[i]],unit="ms")
         if len(list_i) > 0 and to_include:
             list_of_lists.append(list_i)
-    return list_of_lists, ids_start_time
+    return list_of_lists
