@@ -134,7 +134,6 @@ def get_id_list_from_user_by_createdAt(mc,user_id, start_date, end_date, device_
     # steps_delta: 10, minimum number of steps required
     # max_dist_km2min: 0.16 km, maximum allowed distance to be travelled in 1 minute
     # gap_time: 10*60 sec, gap between sessions to be considered a new session
-
     try:  # check date string format
         start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S.%f%z")
         end_date_long = mc.convert_to_unix_time(end_date)
@@ -162,7 +161,7 @@ def get_id_list_from_user_by_createdAt(mc,user_id, start_date, end_date, device_
     last_uploaded_data = pd.DataFrame(agg)
     print("last uploaded data size: {}".format(len(last_uploaded_data)))
     if len(last_uploaded_data)==0:
-        return [], datetime.utcnow()
+        return []
     min_timestamp=last_uploaded_data.timestamp.min()
     _id_min=str(last_uploaded_data[last_uploaded_data.timestamp==min_timestamp]._id.iloc[0])
 
@@ -209,7 +208,7 @@ def get_id_list_from_user_by_createdAt(mc,user_id, start_date, end_date, device_
     print(len(df))
     if len(df) == 0:
         print("No data was retrieved for this user")
-        return [], datetime.utcnow()
+        return []
 
     df["_id"] = df._id.apply(str)
 
@@ -226,7 +225,7 @@ def get_id_list_from_user_by_createdAt(mc,user_id, start_date, end_date, device_
         dt = (t - t2)
     except:
         print("The format of timestamp_local is deprecated for this user")
-        return [], datetime.utcnow()
+        return []
     dt[0] = 0
     dt = np.array([float(i) for i in dt])
     et = np.array(df.elapsed_time.shift())
