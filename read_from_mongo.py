@@ -43,9 +43,9 @@ class HostnameManager:
     def get_host_name(host_type):
         hostname='localhost'
         if host_type in 'prod':
-            hostname='automotive.vizible.zone'
+            hostname='stats.vizible.zone'
         elif host_type in 'test':
-            hostname='dev.vizible.zone'
+            hostname='statsdev.vizible.zone'
         return hostname
 
     @staticmethod
