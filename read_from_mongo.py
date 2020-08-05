@@ -40,12 +40,19 @@ import os.path
 
 class HostnameManager:
     @staticmethod
-    def get_host_name(host_type):
+    def get_host_name(env_type, ssh_only):
         hostname='localhost'
-        if host_type in 'prod':
-            hostname='stats.vizible.zone'
-        elif host_type in 'test':
-            hostname='statsdev.vizible.zone'
+        if env_type=='prod':
+            if ssh_only:
+                hostname='stats.vizible.zone'
+            else:
+                hostname='api.vizible.zone'
+        elif env_type in 'test':
+            if ssh_only:
+                hostname='statsdev.vizible.zone'
+            else:
+                hostname='apidev.vizible.zone'
+
         return hostname
 
     @staticmethod
@@ -68,7 +75,9 @@ class MongoConnection:
 
     def connect(self, connection_type, read_only=False):
 
-        MONGO_HOST = HostnameManager.get_host_name(connection_type)
+        MONGO_HOST = HostnameManager.get_host_name(connection_type, True)
+        print('\nHostname is: ' + MONGO_HOST)
+
         MONGO_DB = "VizibleZone"
         MONGO_USER = "ubuntu"
         if (connection_type == 'prod'):
