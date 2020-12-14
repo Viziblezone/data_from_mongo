@@ -36,6 +36,8 @@ from datetime import datetime, timezone, timedelta
 
 from sshtunnel import SSHTunnelForwarder
 import os.path
+from itertools import chain
+from functools import reduce
 
 
 class HostnameManager:
@@ -141,6 +143,8 @@ class MongoConnection:
         return pd.DataFrame(agg)
 
 
+
+
     def dispose(self):
         print("Closing connection to DB")
 
@@ -159,105 +163,98 @@ class MongoConnection:
 
 
 import math
+from collections import defaultdict
+
 
 
 # {['latitude':1]},'gps_longitude':1 ,'gps_speed':1
 
-def read_VZ_from_mongo(mc,_id):
-    dfjson = pd.DataFrame(mc.db.sensors.find({"_id": ObjectId(_id)}, {"_id": 1, 'gps': 1, 'user_id': 1, 'device_type': 1, "timestamp_local": 1, "createdAt": 1, "deltaSteps": 1, "distance": 1}))
+# merging dictionaries
+def merge_dicts(dicts):
+    mergedict = defaultdict(list)
+    for k, v in chain(*[d.items() for d in dicts]):
+        mergedict[k].append(v)
 
-#    dfjson = pd.DataFrame(mc.db.sensors.find({"_id": ObjectId(_id)}, {"_id": 1, 'gps': 1, 'user_id': 1, 'device_type': 1, "timestamp_local": 1, "createdAt": 1}))
+    return mergedict
+
+
+def concat_singles(vecs_df, singles_df):
+    if len(vecs_df) == 0:
+        return vecs_df
+    return pd.concat([vecs_df, singles_df.append([singles_df] * len(vecs_df), ignore_index=True)], axis=1)
+
+
+def read_vz_to_dfs(mc, _id):
+    dfjson = pd.DataFrame(mc.db.sensors.find({"_id": ObjectId(_id)}))
     if len(dfjson) == 0:
         print("_id {} is empty".format(_id))
         return dfjson
-    # find number_of_samples
-    vecs = ['gps']
-    singles = ['_id', 'user_id', 'device_type', "timestamp_local", "createdAt","deltaSteps", "distance"]
-    vecs_dfs = []
-    min_ts = np.inf
-    max_ts = 0
-    for column in vecs:
-        if column in dfjson.columns:
-            t = pd.DataFrame(dfjson[column][0])
-            if len(t) > 0:
-                t.columns = map(str.lower, t.columns)
-                min_ts = min(min_ts, t.timestamp.min())
-                max_ts = max(max_ts, t.timestamp.max())
-                merge_on = round(t.timestamp / 50)  # time resolution 50ms
-                t = t.drop(["timestamp"], axis=1)
-                if "_id" in t.columns:
-                    t = t.drop(["_id"], axis=1)
-                t = t.add_prefix(column + "_")
-                t["merge_on"] = merge_on
-                t = t.drop_duplicates(subset=["merge_on"])
-                vecs_dfs.append(t)
-        else:
-            print("{} is missing from _id {}".format(column, _id))
-    df_tmp = pd.DataFrame()
-    df_tmp["merge_on"] = np.arange(round(min_ts / 50), round(max_ts / 50))
-    df_tmp["timestamps_utc"] = pd.to_datetime(np.array(df_tmp.merge_on) * 50, unit='ms')
-
-    for df_i in vecs_dfs:
-        df_tmp = pd.merge(left=df_tmp, right=df_i, on="merge_on", how="left")
-    df_tmp = df_tmp.fillna(method="ffill")
-    df_tmp = df_tmp.iloc[np.arange(1, len(df_tmp), 2)]  # take only 100ms
-    df_tmp = df_tmp.reset_index(drop=True)
-
-    for column in singles:
-        if column in dfjson.columns:
-            df_tmp[column] = dfjson[column][0]
-        else:
-            print("{} is missing from _id {}".format(column, _id))
-    df_tmp = df_tmp.rename(columns={"gps_bearing": "gps_azimuth",
-                                    "gps_bearing_accuracy": "gps_azimuth_accuracy", 'testing_mode_value': 'testing_mode'})
-
-    # correct and add columns
-
-    # create timestamps_value (local)
-    s = df_tmp.timestamp_local.iloc[0]
-    seconds_tz = int(s[-5:-3]) * 3600 + int(s[-2:]) * 60
-    df_tmp["timestamp"] = df_tmp.timestamps_utc.dt.tz_localize('UTC').dt.tz_convert(seconds_tz)
-    df_tmp["timestamps_value"] = df_tmp["timestamp"]
-    # clean zeros in the lat/long reading
-    df_tmp = df_tmp[df_tmp["gps_latitude"] < df_tmp["gps_latitude"].median() + 1]
-    df_tmp = df_tmp[df_tmp["gps_latitude"] > df_tmp["gps_latitude"].median() - 1]
-
-
-    # def calc_tot_acceleration(row):
-    #     r = row['linear_acceleration_x_axis'] ** 2 + row['linear_acceleration_y_axis'] ** 2 + row[
-    #         'linear_acceleration_z_axis'] ** 2
-    #     return r ** 0.5
-    #
-    #
-    # def calc_tot_gyro(row):
-    #     r = row['gyroscope_x_axis'] ** 2 + row['gyroscope_y_axis'] ** 2 + row['gyroscope_z_axis'] ** 2
-    #     return r ** 0.5
-    #
-    # df_tmp['linear_acceleration'] = df_tmp.apply(calc_tot_acceleration, axis=1)
-    # df_tmp['gyroscope_tot'] = df_tmp.apply(calc_tot_gyro, axis=1)
-
-    return df_tmp
+    vecs = ['gps', 'linear_acceleration', 'gyroscope', 'magnetometer', '' 'orientation', 'steps', 'testing_mode',
+            'acceleration', 'gravity', 'rotation_matrix']
+    #    vecs=['ble_proximity','testing_mode']
+    singles = ['_id', 'status', 'user_id', 'user_type', 'device_type', 'sample_period',
+               'timestamp_local', 'createdAt', 'updatedAt', '__v']
+    singles_df = pd.DataFrame.from_dict({column: [dfjson[column][0]] for column in singles if column in dfjson.columns},
+                                        orient='columns', dtype=None, columns=None)
+    return {column: concat_singles(
+        pd.DataFrame(dfjson[column][0]).drop(["_id"], axis=1, errors='ignore').add_prefix(column + "_"), singles_df) for
+            column in vecs if column in dfjson.columns}
 
 
 
+def get_timestamp_local(mc, _id):
+    agg = mc.db.sensors.aggregate(
+        [{"$match": {"_id": ObjectId(_id)}}, {"$project": {"timestamp_local": "$timestamp_local"}}])
+    print('in get_timestamp_local')
+    return pd.DataFrame(agg)['ftimestamp_local'][0]
+
+def get_user_id(mc, _id):
+    agg = mc.db.sensors.aggregate(
+        [{"$match": {"_id": ObjectId(_id)}}, {"$project": {"user_id": "$user_id"}}])
+    return pd.DataFrame(agg)['user_id'][0]
+
+def get_dfs_for_ids(mc, ids):
+    md = merge_dicts([read_vz_to_dfs(mc, _id) for _id in ids])
+    return {k: pd.concat(md[k]) for k in md}
 
 
+def set_ts(df):
+    tscol = [col for col in df.columns if '_timestamp' in col][0]
+    df = df.rename(columns={tscol: "timestamp"}).sort_values('timestamp')
+    df = df[df.timestamp > 0]  # ignore rows with blank time
+
+    return df
 
 
-def get_df_for_ids(mc,ids):
+def get_df_for_ids(mc, ids):
 
     print(len(ids), ' ids')
     print(ids)
     # list_ids=list(df_walk._id)
-    df_vz = pd.DataFrame()
-    for _id in ids:
-        try:
-            df_tmp = read_VZ_from_mongo(mc,_id)
-            df_vz = pd.concat([df_vz, df_tmp], axis=0)
-        except:
-            print('problem with id {}'.format(_id))
 
-    #    df_vz['timestamp']=df_vz.apply(convert_str_to_datetime, axis=1)
-    df_vz = df_vz.sort_values(['timestamp'])
-    return df_vz.reset_index(drop=True)
+
+    dfs_dic = get_dfs_for_ids(mc, ids)
+
+    dfs_dic_with_ts = {k: set_ts(dfs_dic[k]) for k in dfs_dic if
+                       any([col for col in dfs_dic[k].columns if '_timestamp' in col])}
+
+    min_ts = min([dfs_dic_with_ts[k]['timestamp'].min() for k in dfs_dic_with_ts.keys()])
+    max_ts = max([dfs_dic_with_ts[k]['timestamp'].max() for k in dfs_dic_with_ts.keys()])
+
+    timestamp_df = pd.DataFrame(data={'timestamp': np.linspace(min_ts, max_ts, int((max_ts - min_ts) / 100))})
+
+    gps_df = dfs_dic_with_ts.pop('gps')
+
+    gps_df = pd.merge_asof(timestamp_df, gps_df, on='timestamp', direction='nearest', tolerance=2000)
+
+    df_AS = reduce(lambda left, right: pd.merge_asof(left,
+                                                     right.drop([c for c in left.columns if c != 'timestamp'], axis=1,
+                                                                errors='ignore'), on='timestamp', direction='nearest',
+                                                     tolerance=100),
+                   dict(list({'time': timestamp_df}.items()) + list(dfs_dic_with_ts.items())).values())
+
+    gps_df = gps_df[['timestamp', 'gps_accuracy', 'gps_altitude', 'gps_bearing', 'gps_bearing_accuracy', 'gps_latitude',
+                     'gps_longitude', 'gps_speed']]
+    df_AS = df_AS.merge(gps_df, on='timestamp')
+    return  df_AS
 
