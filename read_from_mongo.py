@@ -169,7 +169,7 @@ from collections import defaultdict
 
 # {['latitude':1]},'gps_longitude':1 ,'gps_speed':1
 
-# merging dictionaries
+
 def merge_dicts(dicts):
     mergedict = defaultdict(list)
     for k, v in chain(*[d.items() for d in dicts]):
@@ -178,28 +178,29 @@ def merge_dicts(dicts):
     return mergedict
 
 
-def concat_singles(vecs_df, singles_df):
-    if len(vecs_df) == 0:
-        return vecs_df
-    return pd.concat([vecs_df, singles_df.append([singles_df] * len(vecs_df), ignore_index=True)], axis=1)
-
 
 def read_vz_to_dfs(mc, _id):
     dfjson = pd.DataFrame(mc.db.sensors.find({"_id": ObjectId(_id)}))
     if len(dfjson) == 0:
         print("_id {} is empty".format(_id))
-        return dfjson
-    vecs = ['gps', 'linear_acceleration', 'gyroscope', 'magnetometer', '' 'orientation', 'steps', 'testing_mode',
-            'acceleration', 'gravity', 'rotation_matrix']
+
+    vecs = ['gps', 'linear_acceleration', 'gyroscope', 'orientation', 'steps', 'testing_mode', 'acceleration',
+            'gravity', 'ble_proximity']
     #    vecs=['ble_proximity','testing_mode']
     singles = ['_id', 'status', 'user_id', 'user_type', 'device_type', 'sample_period',
                'timestamp_local', 'createdAt', 'updatedAt', '__v']
     singles_df = pd.DataFrame.from_dict({column: [dfjson[column][0]] for column in singles if column in dfjson.columns},
                                         orient='columns', dtype=None, columns=None)
-    return {column: concat_singles(
-        pd.DataFrame(dfjson[column][0]).drop(["_id"], axis=1, errors='ignore').add_prefix(column + "_"), singles_df) for
-            column in vecs if column in dfjson.columns}
+    vecs_dic = {column: pd.DataFrame(dfjson[column][0]).drop(["_id"], axis=1, errors='ignore').add_prefix(column + "_")
+                for column in vecs if column in dfjson.columns}
+    vecs_dic['singles_df'] = singles_df
+    return vecs_dic
 
+
+
+def get_dfs_for_ids(mc, ids):
+    md = merge_dicts([read_vz_to_dfs(mc, _id) for _id in ids])
+    return {k: pd.concat(md[k]) for k in md}
 
 
 def get_timestamp_local(mc, _id):
@@ -213,9 +214,7 @@ def get_user_id(mc, _id):
         [{"$match": {"_id": ObjectId(_id)}}, {"$project": {"user_id": "$user_id"}}])
     return pd.DataFrame(agg)['user_id'][0]
 
-def get_dfs_for_ids(mc, ids):
-    md = merge_dicts([read_vz_to_dfs(mc, _id) for _id in ids])
-    return {k: pd.concat(md[k]) for k in md}
+
 
 
 def set_ts(df):
@@ -231,7 +230,6 @@ def get_df_for_ids(mc, ids):
     print(len(ids), ' ids')
     print(ids)
     # list_ids=list(df_walk._id)
-
 
     dfs_dic = get_dfs_for_ids(mc, ids)
 
@@ -252,9 +250,10 @@ def get_df_for_ids(mc, ids):
                                                                 errors='ignore'), on='timestamp', direction='nearest',
                                                      tolerance=100),
                    dict(list({'time': timestamp_df}.items()) + list(dfs_dic_with_ts.items())).values())
-
     gps_df = gps_df[['timestamp', 'gps_accuracy', 'gps_altitude', 'gps_bearing', 'gps_bearing_accuracy', 'gps_latitude',
                      'gps_longitude', 'gps_speed']]
+
     df_AS = df_AS.merge(gps_df, on='timestamp')
-    return  df_AS
+    singles_df=dfs_dic['singles_df']
+    return pd.concat([df_AS, singles_df.append([singles_df] * (len(df_AS) - 1), ignore_index=True)], axis=1)
 
