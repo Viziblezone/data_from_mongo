@@ -131,7 +131,7 @@ class MongoConnection:
         return True
 
     def log_session(self, session):
-        self.db_write.walking_session.insert_one(session)
+        self.db_write.walking_session_new.insert_one(session)
 
     def get_sessions_by_date(self, start_date, end_date):
 
@@ -139,7 +139,7 @@ class MongoConnection:
             {"$match": {"start_time": {"$gt": start_date, "$lt": end_date}}}
         ]
 
-        agg = self.db.walking_session.aggregate(agg_code)
+        agg = self.db.walking_session_new.aggregate(agg_code)
         return pd.DataFrame(agg)
 
 

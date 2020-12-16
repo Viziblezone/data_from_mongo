@@ -2,13 +2,13 @@ from distutils.core import setup
 setup(
   name = 'data_from_mongo',         # How you named your package folder (MyLib)
   packages = ['data_from_mongo'],   # Chose the same as "name"
-  version = '1.7',      # Start with a small number and increase it with every change you make
+  version = '2.1',      # Start with a small number and increase it with every change you make
   license='MIT',        # Chose a license from here: https://help.github.com/articles/licensing-a-repository
   description = 'TYPE YOUR DESCRIPTION HERE',   # Give a short description about your library
   author = 'Tzviya',                   # Type in your name
   author_email = 'tzviya@vizible.zone',      # Type in your E-Mail
   url = 'https://github.com/user/reponame',   # Provide either the link to your github or to your website
-  download_url = 'https://github.com/tlangent2/data_from_mongo/archive/1.7.tar.gz',    # I explain this later on
+  download_url = 'https://github.com/Viziblezone/data_from_mongo/archive/2.1.tar.gz',    # I explain this later on
   keywords = ['SOME', 'MEANINGFULL', 'KEYWORDS'],   # Keywords that define your package best
   install_requires=[            # I get to this in a second
           'sshtunnel',
