@@ -255,5 +255,8 @@ def get_df_for_ids(mc, ids):
 
     df_AS = df_AS.merge(gps_df, on='timestamp')
     singles_df=dfs_dic['singles_df']
+    df_AS["timestamps_utc"] = pd.to_datetime(np.array(df_AS.timestamp), unit='ms')
+
+    df_AS["timestamp"] = df_AS.timestamps_utc.dt.tz_localize('UTC').dt.tz_convert('Asia/Hebron')
     return pd.concat([df_AS, singles_df.append([singles_df] * (len(df_AS) - 1), ignore_index=True)], axis=1)
 
