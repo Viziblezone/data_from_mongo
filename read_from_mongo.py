@@ -187,7 +187,7 @@ def read_vz_to_dfs(mc, _id):
     vecs = ['gps', 'linear_acceleration', 'gyroscope', 'orientation', 'steps', 'testing_mode', 'acceleration',
             'gravity', 'ble_proximity']
     #    vecs=['ble_proximity','testing_mode']
-    singles = ['_id', 'status', 'user_id', 'user_type', 'device_type', 'sample_period',
+    singles = ['_id', 'status', 'user_id', 'user_type', 'device_type',"deltaSteps", "distance", 'sample_period',
                'timestamp_local', 'createdAt', 'updatedAt', '__v']
     singles_df = pd.DataFrame.from_dict({column: [dfjson[column][0]] for column in singles if column in dfjson.columns},
                                         orient='columns', dtype=None, columns=None)
