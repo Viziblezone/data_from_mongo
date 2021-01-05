@@ -184,8 +184,8 @@ def read_vz_to_dfs(mc, _id):
     if len(dfjson) == 0:
         print("_id {} is empty".format(_id))
 
-    vecs = ['gps', 'linear_acceleration', 'gyroscope', 'orientation', 'steps', 'testing_mode', 'acceleration',
-            'gravity', 'ble_proximity']
+    vecs=['gps', 'linear_acceleration', 'gyroscope', 'orientation', 'steps','testing_mode', 'acceleration',
+          'gravity', 'magnetometer', 'rotation_matrix']
     #    vecs=['ble_proximity','testing_mode']
     singles = ['_id', 'status', 'user_id', 'user_type', 'device_type',"deltaSteps", "distance", 'sample_period',
                'timestamp_local', 'createdAt', 'updatedAt', '__v']
