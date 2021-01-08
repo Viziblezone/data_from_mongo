@@ -134,13 +134,6 @@ def get_id_list_from_user_by_createdAt(mc,user_id, start_date, end_date, device_
     # steps_delta: 10, minimum number of steps required
     # max_dist_km2min: 0.16 km, maximum allowed distance to be travelled in 1 minute
     # gap_time: 10*60 sec, gap between sessions to be considered a new session
-    try:  # check date string format
-        start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S.%f%z")
-        end_date_long = mc.convert_to_unix_time(end_date)
-        end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S.%f%z")
-
-    except:
-        raise ValueError("Time string should be of format: 2019-07-28 00:00:00.000+0300")
 
     agg_code = [
         {"$match": {"user_id": user_id,
