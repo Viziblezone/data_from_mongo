@@ -30,11 +30,10 @@ def get_id_list_from_user(mc,user_id, start_date, end_date, device_type=0, param
     # max_dist_km2min: 0.16 km, maximum allowed distance to be travelled in 1 minute
     # gap_time: 10*60 sec, gap between sessions to be considered a new session
 
-    try:  # check date string format
-        start_date_long = start_date.timestamp()* 1000
-        end_date_long = end_date.timestamp()* 1000
-    except:
-        raise ValueError("Time string should be of format: 2019-07-28 00:00:00.000+0300")
+
+    start_date_long = start_date.timestamp()* 1000
+    end_date_long = end_date.timestamp()* 1000
+
 
     agg_code = [
         {"$match": {"user_id": user_id,
