@@ -31,8 +31,8 @@ def get_id_list_from_user(mc,user_id, start_date, end_date, device_type=0, param
     # gap_time: 10*60 sec, gap between sessions to be considered a new session
 
     try:  # check date string format
-        start_date_long = mc.convert_to_unix_time(start_date)
-        end_date_long = mc.convert_to_unix_time(end_date)
+        start_date_long = start_date.timestamp()* 1000
+        end_date_long = end_date.timestamp()* 1000
     except:
         raise ValueError("Time string should be of format: 2019-07-28 00:00:00.000+0300")
 
