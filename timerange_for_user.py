@@ -134,6 +134,11 @@ def get_id_list_from_user_by_createdAt(mc,user_id, start_date, end_date, device_
     # max_dist_km2min: 0.16 km, maximum allowed distance to be travelled in 1 minute
     # gap_time: 10*60 sec, gap between sessions to be considered a new session
 
+
+    print('define end_date_long')
+    start_date_long = start_date.timestamp()* 1000
+    end_date_long = end_date.timestamp()* 1000
+    
     agg_code = [
         {"$match": {"user_id": user_id,
                     "createdAt": {"$gt": start_date, "$lt": end_date},
