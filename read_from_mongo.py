@@ -77,6 +77,7 @@ class MongoConnection:
 
     def connect(self, connection_type, read_only=False):
 
+
         MONGO_HOST = HostnameManager.get_host_name(connection_type, True)
         print('\nHostname is: ' + MONGO_HOST)
 
@@ -101,13 +102,16 @@ class MongoConnection:
             remote_bind_address=REMOTE_ADDRESS
         )
 
+        prod_cred = pd.read_csv(r"connect_prod_cred.csv")
+        test_cred = pd.read_csv(r"connect_test_cred.csv")
+
         self.server.start()
 
         if (connection_type == 'prod'):
             self.client = MongoClient('127.0.0.1',
                                  self.server.local_bind_port,
-                                 username='viziblezone',
-                                 password='vz123456',
+                                 username= prod_cred['username'][0],
+                                 password=prod_cred['password'][0],
                                  ssl=True,
                                  ssl_match_hostname=False,
                                  ssl_ca_certs=(pem_path + pem_ca_file),
@@ -115,8 +119,8 @@ class MongoConnection:
         else:
             self.client = MongoClient('127.0.0.1',
                                   self.server.local_bind_port,
-                                  username='dev',
-                                  password='protectingpedestrians',
+                                  username=test_cred['username'][0],
+                                  password=test_cred['password'][0],
                                   ssl=True,
                                   ssl_match_hostname=False,
                                   ssl_ca_certs=(pem_path + pem_ca_file),
@@ -151,7 +155,10 @@ class MongoConnection:
         self.client.close()
         self.server.stop()
 
+    def stop(self):
+        print("Closing connection to DB")
 
+        self.server.stop()
 
 
 import math
